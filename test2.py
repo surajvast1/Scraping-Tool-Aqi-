@@ -1,10 +1,10 @@
-from playwright.sync_api import Page, sync_playwright
+from playwright.async_api import Page, async_playwright
 
 
 
-def scrape_aqicn_station_from_page(page: Page) -> dict:
+async def scrape_aqicn_station_from_page(page: Page, URL: str) -> dict:
     # Wait until ANY known AQICN layout appears
-    page.wait_for_function(
+    await page.wait_for_function(
         """
         () => (
             document.querySelector("#station-header") ||
@@ -16,16 +16,17 @@ def scrape_aqicn_station_from_page(page: Page) -> dict:
         timeout=60000,
     )
 
-    data = page.evaluate(
+    data = await page.evaluate(
         """
-            () => {
+            (url) => {
                 const result = {
                     sourceLayout: null,
                     aqi: null,
                     message: null,
                     updated: null,
                     pm25: null,
-                    pm10: null
+                    pm10: null,
+                    url: url ?? null
                 };
 
                 /* =========================================================
@@ -96,19 +97,21 @@ def scrape_aqicn_station_from_page(page: Page) -> dict:
                 return result;
             }
         """
+        ,
+        URL,
     )
     return data
 
 
-def fetch_aqicn_station(URL: str) -> dict:
+async def fetch_aqicn_station(URL: str) -> dict:
     # Standalone helper (creates its own browser). If you're already inside Playwright,
     # use scrape_aqicn_station_from_page(page) instead to avoid nested sync_playwright().
-    with sync_playwright() as p:
+    async with async_playwright() as p:
         print("Fetching AQICN station:", URL)
-        browser = p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True)
         try:
-            page = browser.new_page()
-            page.goto(URL, timeout=90000, wait_until="domcontentloaded")
-            return scrape_aqicn_station_from_page(page)
+            page = await browser.new_page()
+            await page.goto(URL, timeout=90000, wait_until="domcontentloaded")
+            return await scrape_aqicn_station_from_page(page,URL)
         finally:
-            browser.close()
+            await browser.close()
