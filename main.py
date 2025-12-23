@@ -89,8 +89,25 @@ def fetch_aqicn_via_map(station_name: str) -> dict:
 def main():
     # latitude = 12.9828393
     # longitude = 77.6791966
-    latitude = float(sys.argv[1])
-    longitude = float(sys.argv[2])
+    # latitude = float(sys.argv[1])
+    # longitude = float(sys.argv[2])
+
+    if len(sys.argv) == 3:
+        latitude = float(sys.argv[1])
+        longitude = float(sys.argv[2])
+    else:
+        latitude = os.getenv("LAT")
+        longitude = os.getenv("LON")
+
+        if latitude is None or longitude is None:
+            raise ValueError(
+                "Latitude and longitude not provided. "
+                "Use: python main.py <lat> <lon> "
+                "or set LAT and LON environment variables."
+            )
+
+        latitude = float(latitude)
+        longitude = float(longitude)
 
     url = "https://airquality.cpcb.gov.in/caaqms/iit_rss_feed_with_coordinates?"
 
