@@ -9,6 +9,27 @@ import sys
 
 from test2 import scrape_aqicn_station_from_page
 
+def _read_lat_lon() -> tuple[float, float]:
+    """
+    Read latitude/longitude from either:
+    - CLI args: python main.py <lat> <lon>
+    - Env vars: LAT and LON
+    """
+    if len(sys.argv) == 3:
+        return float(sys.argv[1]), float(sys.argv[2])
+
+    latitude = os.getenv("LAT")
+    longitude = os.getenv("LON")
+
+    if latitude is None or longitude is None:
+        raise ValueError(
+            "Latitude and longitude not provided. "
+            "Use: python main.py <lat> <lon> "
+            "or set LAT and LON environment variables."
+        )
+
+    return float(latitude), float(longitude)
+
 def fetch_aqicn_via_map(station_name: str) -> dict:
     """
     Opens aqicn.org/map, searches for station name,
@@ -87,27 +108,7 @@ def fetch_aqicn_via_map(station_name: str) -> dict:
 
 
 def main():
-    # latitude = 12.9828393
-    # longitude = 77.6791966
-    # latitude = float(sys.argv[1])
-    # longitude = float(sys.argv[2])
-
-    if len(sys.argv) == 3:
-        latitude = float(sys.argv[1])
-        longitude = float(sys.argv[2])
-    else:
-        latitude = os.getenv("LAT")
-        longitude = os.getenv("LON")
-
-        if latitude is None or longitude is None:
-            raise ValueError(
-                "Latitude and longitude not provided. "
-                "Use: python main.py <lat> <lon> "
-                "or set LAT and LON environment variables."
-            )
-
-        latitude = float(latitude)
-        longitude = float(longitude)
+    latitude, longitude = _read_lat_lon()
 
     url = "https://airquality.cpcb.gov.in/caaqms/iit_rss_feed_with_coordinates?"
 
@@ -153,11 +154,22 @@ def main():
     )
 
     # print(f"cpcb:computeNearest {time.perf_counter() - t1:.3f}s")
-    print("Nearest CPCB station:", nearest["station"]["name"])
+    if not nearest:
+        raise RuntimeError(
+            "No CPCB station could be selected. "
+            "This usually means the CPCB response was empty/unexpected, "
+            "or stations were missing coordinates."
+        )
+
+    station_name = nearest.get("station", {}).get("name")
+    if not station_name or station_name == "NA":
+        raise RuntimeError("Nearest CPCB station name is missing/NA; cannot search AQICN.")
+
+    print("Nearest CPCB station:", station_name)
 
     # # ---------------- AQICN ----------------
     print("Fetching AQICN data...")
-    aqicn = fetch_aqicn_via_map(nearest["station"]["name"])
+    aqicn = fetch_aqicn_via_map(station_name)
 
     # ---------------- FINAL OUTPUT ----------------
     print("\nFINAL RESULT\n")
@@ -172,3 +184,4 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print("Error:", e)
+        raise

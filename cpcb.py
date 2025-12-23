@@ -64,10 +64,15 @@ def fetchNearestCpcbStation(
                 lon = parse_finite_number(station.get("longitude"))
                 aqi = parse_finite_number(station.get("airQualityIndexValue"))
 
-                # if lat is None or lon is None or aqi is None:
-                #     continue
+                # CPCB data can contain NA/empty fields. Skip stations without coordinates.
+                if lat is None or lon is None:
+                    continue
 
-                dist = haversine(user_lat, user_lon, lat, lon)
+                try:
+                    dist = haversine(user_lat, user_lon, lat, lon)
+                except Exception:
+                    # If anything unexpected slips through (types, NaN, etc), ignore that station.
+                    continue
 
                 if dist < best_distance:
                     best_distance = dist
@@ -77,9 +82,13 @@ def fetchNearestCpcbStation(
         return None
 
 
+    station_name = best_station.get("stationName")
+    if not station_name:
+        station_name = best_station.get("name") or best_station.get("station") or "NA"
+
     return {
         "station": {
-            "name": best_station.get("stationName")
+            "name": station_name
         },
         "source": "CPCB",
     }
