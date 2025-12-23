@@ -12,6 +12,10 @@ from test2 import scrape_aqicn_station_from_page_sync
 
 app = FastAPI(title="AQI API", version="1.0")
 
+@app.get("/")
+def root() -> dict:
+    return {"name": "AQI API", "status": "ok"}
+
 
 def fetch_aqicn_via_map(station_name: str) -> dict:
     """
