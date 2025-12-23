@@ -21,4 +21,44 @@ A production-ready Air Quality Index (AQI) scraper that:
 ---
 
 ## 📦 Project Structure
+---
+
+## 🚀 Run locally
+
+Install dependencies:
+
+```bash
+cd scraping-aqi
+pip install -r requirements.txt
+playwright install chromium
+```
+
+Start the API:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Health check:
+
+- `GET /health`
+
+Fetch combined AQI:
+
+- `GET /aqi?latitude=12.9828393&longitude=77.6791966`
+
+---
+
+## 🚄 Deploy on Railway (Docker)
+
+- Create a new Railway project
+- Add a new service from **GitHub repo**
+- Set the **Root Directory** to `scraping-aqi` (important)
+- Railway will detect the `Dockerfile` and build it
+- No start command needed (Docker `CMD` runs `uvicorn`)
+
+Notes:
+- Railway injects the `PORT` env var automatically; the container binds to it.
+- If CPCB TLS verification fails in your environment, set `CPCB_INSECURE_TLS=1` (not recommended for production).
+
 

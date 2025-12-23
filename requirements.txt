@@ -1,4 +1,4 @@
-playwright
-requests
-fastapi
-uvicorn
+playwright==1.49.0
+requests==2.32.3
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
